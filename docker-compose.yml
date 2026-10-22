@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6.0
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - skilltrack-net
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGO_URI: mongodb://mongo:27017/skilltrack
+      JWT_SECRET: skilltrack-super-secure-production-jwt-secret-min-32-chars
+      CORS_ORIGIN: http://localhost,http://localhost:80,http://localhost:3000,http://localhost:5173
+      CLIENT_URL: http://localhost:3000
+    depends_on:
+      - mongo
+    networks:
+      - skilltrack-net
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:5000/api
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+    networks:
+      - skilltrack-net
+
+volumes:
+  mongo-data:
+
+networks:
+  skilltrack-net:
+    driver: bridge
