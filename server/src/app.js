@@ -26,7 +26,7 @@ app.use(
 
 // Cross-Origin Resource Sharing (CORS) hardening
 const allowedOrigins = config.corsOrigin
-  ? config.corsOrigin.split(',').map((o) => o.trim()).filter(Boolean)
+  ? config.corsOrigin.split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean)
   : [];
 
 const corsOptions = {
@@ -39,7 +39,14 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    if (allowedOrigins.includes(origin)) {
+    const normalizedOrigin = origin.replace(/\/+$/, '');
+
+    if (allowedOrigins.includes(normalizedOrigin) || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow Vercel deployments matching skill-track or the production domain
+    if (/^https:\/\/[\w-]+\.vercel\.app$/i.test(normalizedOrigin) && (normalizedOrigin.includes('skill-track') || normalizedOrigin.includes('skilltrack'))) {
       return callback(null, true);
     }
 
